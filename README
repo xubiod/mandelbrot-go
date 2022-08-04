@@ -1,0 +1,12 @@
+Quick readme written on GitHub it's 10pm
+
+Tested in bash on Ubuntu, cmd on Windows, and powershell on Windows
+
+From testing
+bash (best) > cmd > powershell (worst)
+
+Z - Zoom in
+X - Zoom out
+Arrow keys - Move
+
+Install Go (1.19) and run `go run main.go` and have fun with this probably bad Mandelbrot set viewer thing in the terminal
