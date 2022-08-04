@@ -134,61 +134,14 @@ func main() {
 					//fmt.Printf("%d: on duty!", _y)
 					defer render_wg.Done()
 					for _x := 0; _x < int(width); _x += pass_fx[_pass] {
-						y0 := -1.2/_uz + (2.47*(float64(_y)/height))/_uz + _uy
-						x0 := -2.0/_uz + (4.00*(float64(_x)/width))/_uz + _ux
 
-						iteration := 0
-
-						mx := 0.0
-						my := 0.0
-
-						x2 := mx * mx
-						y2 := my * my
-
-						var xt float64
-
-						for x2+y2 <= 4.0 && iteration < _current_iteration {
-							xt = x2 - y2 + x0
-							my = 2*mx*my + y0
-							mx = xt
-							x2 = mx * mx
-							y2 = my * my
-							iteration++
-						}
-
-						if iteration >= _current_iteration {
-							iteration = 0
-						}
+						iteration := getAtPoint(float64(_x), float64(_y), _ux, _uy, _uz, _current_iteration)
 
 						hq_iter := 0
 						if _hq {
 							hqy := float64(_y) + float64(pass_fx[_pass])/2.0
 
-							y0 = -1.2/_uz + (2.47*(hqy/height))/_uz + _uy
-							x0 = -2.0/_uz + (4.00*(float64(_x)/width))/_uz + _ux
-
-							//hq_iter := 0
-
-							mx = 0.0
-							my = 0.0
-
-							x2 = mx * mx
-							y2 = my * my
-
-							xt = 0
-
-							for x2+y2 <= 4.0 && hq_iter < _current_iteration {
-								xt = x2 - y2 + x0
-								my = 2*mx*my + y0
-								mx = xt
-								x2 = mx * mx
-								y2 = my * my
-								hq_iter++
-							}
-
-							if hq_iter >= _current_iteration {
-								hq_iter = 0
-							}
+							hq_iter = getAtPoint(float64(_x), hqy, _ux, _uy, _uz, _current_iteration)
 
 							s.SetContent(_x, _y, '▄', nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.PaletteColor(hq_iter)))
 						} else {
@@ -242,6 +195,36 @@ func main() {
 		}
 		//i *= 1.05
 	}
+}
+
+func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_iterations int) int {
+	y0 := -1.2/uz + (2.47*(y/height))/uz + uy
+	x0 := -2.0/uz + (4.00*(x/width))/uz + ux
+
+	iteration := 0
+
+	mx := 0.0
+	my := 0.0
+
+	x2 := mx * mx
+	y2 := my * my
+
+	var xt float64
+
+	for x2+y2 <= 4.0 && iteration < max_iterations {
+		xt = x2 - y2 + x0
+		my = 2*mx*my + y0
+		mx = xt
+		x2 = mx * mx
+		y2 = my * my
+		iteration++
+	}
+
+	if iteration >= max_iterations {
+		iteration = 0
+	}
+
+	return iteration
 }
 
 // func vanilla() {
