@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"os"
 	"sync"
 
@@ -13,11 +14,14 @@ const height float64 = 60.0
 
 // const max_iteration = 200
 
-var updating_iterations = []int{25, 50, 100, 150, 200}
+var updating_iterations = []int{25, 50, 100, 150, 200, 400}
 
-var pass_fx = []int{3, 2, 2, 1, 1}
+var pass_fx = []int{3, 2, 2, 1, 1, 1}
 
-const max_passes = 5
+const max_sq_passes = 5
+
+var crosshair = true
+var hq_render = false
 
 // const single_rune = true
 
@@ -96,6 +100,20 @@ func main() {
 						uz *= 1.05
 					case 'X', 'x':
 						uz /= 1.05
+					case 'C', 'c':
+						crosshair = !crosshair
+					case 'Q', 'q':
+						go func() {
+							ux = 0
+							uy = 0
+							uz = 1
+							pass = 0
+						}()
+					case 'R', 'r':
+						if !hq_render {
+							hq_render = true
+							pass = max_sq_passes
+						}
 					}
 				}
 			}
@@ -104,12 +122,15 @@ func main() {
 
 	uz = 1.0
 	for /*f := 0; f < frames; f++*/ {
-		if pass < max_passes {
-			current_iteration := updating_iterations[pass]
+		if pass < max_sq_passes || hq_render {
+			current_iteration := updating_iterations[int(math.Min(float64(max_sq_passes), float64(pass)))]
+			if hq_render {
+				current_iteration = updating_iterations[max_sq_passes]
+			}
 
 			for y := 0; y < int(height); y += pass_fx[pass] {
 				render_wg.Add(1)
-				go func(_y int, _pass int, _current_iteration int, _ux float64, _uy float64, _uz float64) {
+				go func(_y int, _pass int, _current_iteration int, _ux float64, _uy float64, _uz float64, _hq bool) {
 					//fmt.Printf("%d: on duty!", _y)
 					defer render_wg.Done()
 					for _x := 0; _x < int(width); _x += pass_fx[_pass] {
@@ -139,30 +160,65 @@ func main() {
 							iteration = 0
 						}
 
-						var ending_rune rune = ' '
+						hq_iter := 0
+						if _hq {
+							hqy := float64(_y) + float64(pass_fx[_pass])/2.0
 
-						if _x == int(width/2) {
-							ending_rune = '|'
-						}
+							y0 = -1.2/_uz + (2.47*(hqy/height))/_uz + _uy
+							x0 = -2.0/_uz + (4.00*(float64(_x)/width))/_uz + _ux
 
-						if _y == int(height/2) {
-							if ending_rune == '|' {
-								ending_rune = '+'
-							} else {
-								ending_rune = '-'
+							//hq_iter := 0
+
+							mx = 0.0
+							my = 0.0
+
+							x2 = mx * mx
+							y2 = my * my
+
+							xt = 0
+
+							for x2+y2 <= 4.0 && hq_iter < _current_iteration {
+								xt = x2 - y2 + x0
+								my = 2*mx*my + y0
+								mx = xt
+								x2 = mx * mx
+								y2 = my * my
+								hq_iter++
 							}
+
+							if hq_iter >= _current_iteration {
+								hq_iter = 0
+							}
+
+							s.SetContent(_x, _y, '▄', nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.PaletteColor(hq_iter)))
+						} else {
+							// if !single_rune {
+							// 	ending_rune = rune(iteration+'0') % 127
+							// 	if ending_rune < '0' {
+							// 		ending_rune += '0'
+							// 	}
+							// } else {
+							// 	ending_rune = ' '
+							// }
+
+							var ending_rune rune = ' '
+							// ┃╋━
+
+							if crosshair {
+								if _x == int(width/2) {
+									ending_rune = '┃'
+								}
+
+								if _y == int(height/2) {
+									if ending_rune == '┃' {
+										ending_rune = '╋'
+									} else {
+										ending_rune = '━'
+									}
+								}
+							}
+							s.SetContent(_x, _y, ending_rune, nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.ColorWhite))
 						}
-
-						// if !single_rune {
-						// 	ending_rune = rune(iteration+'0') % 127
-						// 	if ending_rune < '0' {
-						// 		ending_rune += '0'
-						// 	}
-						// } else {
-						// 	ending_rune = ' '
-						// }
-
-						s.SetContent(_x, _y, ending_rune, nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.ColorWhite))
 
 						// if x+_y == 0 {
 						// ending_rune = '0' + rune(iteration)
@@ -172,10 +228,11 @@ func main() {
 					}
 					//fmt.Printf("%d: i'm done! ", _y)
 					//done <- _y
-				}(y, pass, current_iteration, ux, uy, uz)
+				}(y, pass, current_iteration, ux, uy, uz, hq_render)
 			}
 			pass++
 			render_wg.Wait()
+			hq_render = false
 			// amount := cap(done)
 			// for q := 0; q < int(height); q++ {
 			// 	fmt.Printf("main: y %d is done, waiting for %d more, even with %d around! ", <-done, amount-1, len(done))
