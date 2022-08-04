@@ -14,11 +14,11 @@ const height float64 = 60.0
 
 // const max_iteration = 200
 
-var updating_iterations = []int{25, 50, 100, 150, 200, 400}
+var updating_iterations = []int{25, 50, 100, 150, 200, 300, 500}
 
-var pass_fx = []int{3, 2, 2, 1, 1, 1}
+var pass_fx = []int{3, 2, 2, 1, 1, 1, 1}
 
-const max_sq_passes = 5
+const max_sq_passes = 6
 
 var crosshair = true
 var hq_render = false
