@@ -8,5 +8,6 @@ bash (best) > cmd > powershell (worst)
 Z - Zoom in
 X - Zoom out
 Arrow keys - Move
+Escape - Quit
 
 Install Go (1.19) and run `go run main.go` and have fun with this probably bad Mandelbrot set viewer thing in the terminal
