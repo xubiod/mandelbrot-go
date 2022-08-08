@@ -14,8 +14,6 @@ import (
 const width float64 = 180.0
 const height float64 = 60.0
 
-// const max_iteration = 200
-
 var updating_iterations = []int{25, 50, 100, 150, 200, 300, 500}
 
 var pass_fx = []int{3, 2, 2, 1, 1, 1, 1}
@@ -28,8 +26,6 @@ var hq_render = false
 // const single_rune = true
 
 var ux, uy, uz float64
-
-// const frames = 600
 
 const boundCheck complex128 = 4 + 0i
 
@@ -46,20 +42,13 @@ func main() {
 	}
 
 	quit := func() {
-		// time.Sleep(time.Second * 3)
 		s.Fini()
 		os.Exit(0)
 	}
 
-	// var _x, y, iteration int
-	// var x0, y0, mx, my, x2, y2, xt float64
 	var pass int = 0
-	// var current_iteration int
 
 	var render_wg sync.WaitGroup
-
-	// done := make(chan int, int(height))
-	// fmt.Printf("!!%d!!!! ! ? ", cap(done))
 
 	// event handling
 	go func(s tcell.Screen) {
@@ -143,7 +132,7 @@ func main() {
 	}(s)
 
 	uz = 1.0
-	for /*f := 0; f < frames; f++*/ {
+	for {
 		if pass < max_sq_passes || hq_render {
 			current_iteration := updating_iterations[int(math.Min(float64(max_sq_passes), float64(pass)))]
 			if hq_render {
@@ -203,21 +192,13 @@ func main() {
 						// s.SetContent(_x, _y, ending_rune, nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.ColorWhite))
 						// }
 					}
-					//fmt.Printf("%d: i'm done! ", _y)
-					//done <- _y
 				}(y, pass, current_iteration, ux, uy, uz, hq_render, usePower)
 			}
 			pass++
 			render_wg.Wait()
 			hq_render = false
-			// amount := cap(done)
-			// for q := 0; q < int(height); q++ {
-			// 	fmt.Printf("main: y %d is done, waiting for %d more, even with %d around! ", <-done, amount-1, len(done))
-			// 	amount--
-			// }
 			s.Show()
 		}
-		//i *= 1.05
 	}
 }
 
