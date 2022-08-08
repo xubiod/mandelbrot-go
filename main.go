@@ -143,6 +143,8 @@ func main() {
 
 							hq_iter = getAtPoint(float64(_x), hqy, _ux, _uy, _uz, _current_iteration)
 
+							// Characters that slap
+							// ▄ ░ ▒ ▓
 							s.SetContent(_x, _y, '▄', nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.PaletteColor(hq_iter)))
 						} else {
 							// if !single_rune {
