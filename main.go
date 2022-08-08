@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"math"
+	"math/cmplx"
 	"os"
 	"sync"
 
@@ -199,26 +200,31 @@ func main() {
 	}
 }
 
+const boundCheck complex128 = 2 + 0i
+
 func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_iterations int) int {
 	y0 := -1.2/uz + (2.47*(y/height))/uz + uy
 	x0 := -2.0/uz + (4.00*(x/width))/uz + ux
 
+	var point complex128 = complex(x0, y0)
 	iteration := 0
 
-	mx := 0.0
-	my := 0.0
+	// mx := 0.0
+	// my := 0.0
 
-	x2 := mx * mx
-	y2 := my * my
+	// x2 := mx * mx
+	// y2 := my * my
+	z := 0 + 0i
 
-	var xt float64
+	// var xt float64
 
-	for x2+y2 <= 4.0 && iteration < max_iterations {
-		xt = x2 - y2 + x0
-		my = 2*mx*my + y0
-		mx = xt
-		x2 = mx * mx
-		y2 = my * my
+	for cmplx.Abs(z) <= cmplx.Abs(boundCheck) && iteration < max_iterations {
+		// xt = real(cn2) - imag(cn2) + real(cn)
+		// my = 2*cn + complex(0, imag(cn))
+		// mx = complex(xt, 0)
+		// x2 = mx * mx
+		// y2 = my * my
+		z = z*z + point
 		iteration++
 	}
 
