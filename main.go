@@ -34,6 +34,7 @@ var ux, uy, uz float64
 const boundCheck complex128 = 2 + 0i
 
 var power complex128 = 2 + 0i
+var usePower = false
 
 func main() {
 	s, err := tcell.NewScreen()
@@ -122,6 +123,7 @@ func main() {
 						}
 					case 'Y', 'y':
 						go func() {
+							usePower = true
 							power = 0.05 + 0i
 							// hq_render = true
 							for cmplx.Abs(power) < 5.0 {
@@ -131,6 +133,7 @@ func main() {
 							}
 							time.Sleep(time.Millisecond * 500)
 							power = 2
+							usePower = false
 							pass = 0
 						}()
 					}
@@ -149,18 +152,18 @@ func main() {
 
 			for y := 0; y < int(height); y += pass_fx[pass] {
 				render_wg.Add(1)
-				go func(_y int, _pass int, _current_iteration int, _ux float64, _uy float64, _uz float64, _hq bool) {
+				go func(_y int, _pass int, _current_iteration int, _ux float64, _uy float64, _uz float64, _hq bool, _up bool) {
 					//fmt.Printf("%d: on duty!", _y)
 					defer render_wg.Done()
 					for _x := 0; _x < int(width); _x += pass_fx[_pass] {
 
-						iteration := getAtPoint(float64(_x), float64(_y), _ux, _uy, _uz, _current_iteration)
+						iteration := getAtPoint(float64(_x), float64(_y), _ux, _uy, _uz, _current_iteration, _up)
 
 						hq_iter := 0
 						if _hq {
 							hqy := float64(_y) + float64(pass_fx[_pass])/2.0
 
-							hq_iter = getAtPoint(float64(_x), hqy, _ux, _uy, _uz, _current_iteration)
+							hq_iter = getAtPoint(float64(_x), hqy, _ux, _uy, _uz, _current_iteration, _up)
 
 							// Characters that slap
 							// ▄ ░ ▒ ▓
@@ -202,7 +205,7 @@ func main() {
 					}
 					//fmt.Printf("%d: i'm done! ", _y)
 					//done <- _y
-				}(y, pass, current_iteration, ux, uy, uz, hq_render)
+				}(y, pass, current_iteration, ux, uy, uz, hq_render, usePower)
 			}
 			pass++
 			render_wg.Wait()
@@ -218,7 +221,7 @@ func main() {
 	}
 }
 
-func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_iterations int) int {
+func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_iterations int, use_power bool) int {
 	y0 := -1.2/uz + (2.47*(y/height))/uz + uy
 	x0 := -2.0/uz + (4.00*(x/width))/uz + ux
 
@@ -228,7 +231,11 @@ func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_it
 	z := 0 + 0i
 
 	for cmplx.Abs(z) <= cmplx.Abs(boundCheck) && iteration < max_iterations {
-		z = cmplx.Pow(z, power) + point
+		if !usePower {
+			z = z*z + point
+		} else {
+			z = cmplx.Pow(z, power) + point
+		}
 		iteration++
 	}
 
