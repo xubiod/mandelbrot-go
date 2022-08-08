@@ -14,7 +14,7 @@ import (
 const width float64 = 180.0
 const height float64 = 60.0
 
-var updating_iterations = []int{25, 50, 100, 150, 200, 300, 500}
+var updating_iterations = []int{25, 50, 100, 150, 200, 300, 800}
 
 var pass_fx = []int{3, 2, 2, 1, 1, 1, 1}
 
