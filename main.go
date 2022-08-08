@@ -31,7 +31,7 @@ var ux, uy, uz float64
 
 // const frames = 600
 
-const boundCheck complex128 = 2 + 0i
+const boundCheck complex128 = 4 + 0i
 
 var power complex128 = 2 + 0i
 var usePower = false
