@@ -6,6 +6,7 @@ import (
 	"math/cmplx"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -29,6 +30,10 @@ var hq_render = false
 var ux, uy, uz float64
 
 // const frames = 600
+
+const boundCheck complex128 = 2 + 0i
+
+var power complex128 = 2 + 0i
 
 func main() {
 	s, err := tcell.NewScreen()
@@ -115,6 +120,19 @@ func main() {
 							hq_render = true
 							pass = max_sq_passes
 						}
+					case 'Y', 'y':
+						go func() {
+							power = 0.05 + 0i
+							// hq_render = true
+							for cmplx.Abs(power) < 5.0 {
+								power += 0.05
+								pass = 0
+								time.Sleep(time.Millisecond * 200)
+							}
+							time.Sleep(time.Millisecond * 500)
+							power = 2
+							pass = 0
+						}()
 					}
 				}
 			}
@@ -200,8 +218,6 @@ func main() {
 	}
 }
 
-const boundCheck complex128 = 2 + 0i
-
 func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_iterations int) int {
 	y0 := -1.2/uz + (2.47*(y/height))/uz + uy
 	x0 := -2.0/uz + (4.00*(x/width))/uz + ux
@@ -209,22 +225,10 @@ func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_it
 	var point complex128 = complex(x0, y0)
 	iteration := 0
 
-	// mx := 0.0
-	// my := 0.0
-
-	// x2 := mx * mx
-	// y2 := my * my
 	z := 0 + 0i
 
-	// var xt float64
-
 	for cmplx.Abs(z) <= cmplx.Abs(boundCheck) && iteration < max_iterations {
-		// xt = real(cn2) - imag(cn2) + real(cn)
-		// my = 2*cn + complex(0, imag(cn))
-		// mx = complex(xt, 0)
-		// x2 = mx * mx
-		// y2 = my * my
-		z = z*z + point
+		z = cmplx.Pow(z, power) + point
 		iteration++
 	}
 
