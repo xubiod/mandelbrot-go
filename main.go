@@ -211,7 +211,8 @@ func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_it
 
 	z := 0 + 0i
 
-	for cmplx.Abs(z) <= cmplx.Abs(boundCheck) && iteration < max_iterations {
+	checkWith := cmplx.Abs(boundCheck)
+	for cmplx.Abs(z) <= checkWith && iteration < max_iterations {
 		if !usePower {
 			z = z*z + point
 		} else {
