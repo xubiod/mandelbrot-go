@@ -156,7 +156,7 @@ func main() {
 
 							// Characters that slap
 							// ▄ ░ ▒ ▓
-							s.SetContent(_x, _y, '▄', nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.PaletteColor(hq_iter)))
+							s.SetContent(_x, _y, '▄', nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration%256)).Foreground(tcell.PaletteColor(hq_iter%256)))
 						} else {
 							// if !single_rune {
 							// 	ending_rune = rune(iteration+'0') % 127
@@ -183,7 +183,7 @@ func main() {
 									}
 								}
 							}
-							s.SetContent(_x, _y, ending_rune, nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.ColorWhite))
+							s.SetContent(_x, _y, ending_rune, nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration%256)).Foreground(tcell.ColorWhite))
 						}
 
 						// if x+_y == 0 {
