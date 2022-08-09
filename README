@@ -11,6 +11,7 @@ C - Toggle crosshair
 Q - Return to center, reset Zoom
 R - High quality render
 Y - Something cool maybe
+P - PNG Export to `binted.png` at the absurd res of 5120x2880 (720p x 4)
 Arrow keys - Move
 Escape - Quit
 

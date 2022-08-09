@@ -1,6 +1,9 @@
 package main
 
 import (
+	"image"
+	"image/color"
+	"image/png"
 	"log"
 	"math"
 	"math/cmplx"
@@ -125,6 +128,36 @@ func main() {
 							usePower = false
 							pass = 0
 						}()
+
+					case 'P', 'p':
+						go func(_cx float64, _cy float64, _cz float64, _width float64, _height float64) {
+							var png_wg sync.WaitGroup
+							print_image := image.NewNRGBA(image.Rect(0, 0, int(_width), int(_height)))
+							for ryo := 0; ryo < int(_height); ryo++ {
+								png_wg.Add(1)
+								go func(_y int, _pass int, _iteration int, _ux float64, _uy float64, _uz float64) {
+									defer png_wg.Done()
+									for rxo := 0; rxo < int(_width); rxo++ {
+										z := getAtPoint(float64(rxo), float64(_y), _ux, _uy, _uz, _width, _height, _iteration, false, false)
+										fz := float64(z) / float64(_iteration)
+										z = int(fz * 255) //int(fz*0xFFFFFF)
+										print_image.SetNRGBA(rxo, _y, color.NRGBA{uint8(z), uint8(z), uint8(z), 255})
+									}
+								}(ryo, 1, 800, _cx, _cy, _cz)
+							}
+							png_wg.Wait()
+							f, err := os.Create("binted.png")
+							if err != nil {
+								log.Fatal(err)
+							}
+							if png.Encode(f, print_image) != nil {
+								f.Close()
+								log.Fatal(err)
+							}
+							if f.Close() != nil {
+								log.Fatal(err)
+							}
+						}(ux, uy, uz, 1280*4, 720*4)
 					}
 				}
 			}
@@ -146,13 +179,13 @@ func main() {
 					defer render_wg.Done()
 					for _x := 0; _x < int(width); _x += pass_fx[_pass] {
 
-						iteration := getAtPoint(float64(_x), float64(_y), _ux, _uy, _uz, _current_iteration, _up)
+						iteration := getAtPoint(float64(_x), float64(_y), _ux, _uy, _uz, width, height, _current_iteration, _up, true)
 
 						hq_iter := 0
 						if _hq {
 							hqy := float64(_y) + float64(pass_fx[_pass])/2.0
 
-							hq_iter = getAtPoint(float64(_x), hqy, _ux, _uy, _uz, _current_iteration, _up)
+							hq_iter = getAtPoint(float64(_x), hqy, _ux, _uy, _uz, width, height, _current_iteration, _up, true)
 
 							// Characters that slap
 							// ▄ ░ ▒ ▓
@@ -202,9 +235,9 @@ func main() {
 	}
 }
 
-func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_iterations int, use_power bool) int {
-	y0 := -1.2/uz + (2.47*(y/height))/uz + uy
-	x0 := -2.0/uz + (4.00*(x/width))/uz + ux
+func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, _width float64, _height float64, max_iterations int, use_power bool, max_overwrite bool) int {
+	y0 := -1.2/uz + (2.47*(y/_height))/uz + uy
+	x0 := -2.0/uz + (4.00*(x/_width))/uz + ux
 
 	var point complex128 = complex(x0, y0)
 	iteration := 0
@@ -221,7 +254,7 @@ func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, max_it
 		iteration++
 	}
 
-	if iteration >= max_iterations {
+	if iteration >= max_iterations && max_overwrite {
 		iteration = 0
 	}
 
