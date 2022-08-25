@@ -17,14 +17,19 @@ import (
 const width float64 = 180.0
 const height float64 = 60.0
 
-var updating_iterations = []int{150, 150, 250, 400, 600}
+const pngWidth float64 = 1920 * 2
+const pngHeight float64 = 1080 * 2
+const pngName string = "binted.png"
+const pngIterations int = 800
 
-var pass_fx = []int{3, 2, 2, 1, 1}
+var updatingIterations = []int{150, 150, 250, 400, 600}
 
-const max_sq_passes = 4
+var passFx = []int{3, 2, 2, 1, 1}
+
+const maxSqPasses = 4
 
 var crosshair = true
-var hq_render = false
+var hqRender = false
 
 // const single_rune = true
 
@@ -32,7 +37,7 @@ var ux, uy, uz float64
 
 const boundCheck complex128 = 4 + 0i
 
-var power complex128 = 2 + 0i
+var power = 2 + 0i
 var usePower = false
 
 func main() {
@@ -49,9 +54,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	var pass int = 0
+	var pass = 0
 
-	var render_wg sync.WaitGroup
+	var renderWg sync.WaitGroup
 
 	// event handling
 	go func(s tcell.Screen) {
@@ -109,9 +114,9 @@ func main() {
 							pass = 0
 						}()
 					case 'R', 'r':
-						if !hq_render {
-							hq_render = true
-							pass = max_sq_passes
+						if !hqRender {
+							hqRender = true
+							pass = maxSqPasses
 						}
 					case 'Y', 'y':
 						go func() {
@@ -131,33 +136,34 @@ func main() {
 
 					case 'P', 'p':
 						go func(_cx float64, _cy float64, _cz float64, _width float64, _height float64) {
-							var png_wg sync.WaitGroup
-							print_image := image.NewNRGBA(image.Rect(0, 0, int(_width), int(_height)))
+							var pngWg sync.WaitGroup
+							printImage := image.NewNRGBA(image.Rect(0, 0, int(_width), int(_height)))
 							for ryo := 0; ryo < int(_height); ryo++ {
-								png_wg.Add(1)
+								pngWg.Add(1)
 								go func(_y int, _pass int, _iteration int, _ux float64, _uy float64, _uz float64) {
-									defer png_wg.Done()
+									defer pngWg.Done()
 									for rxo := 0; rxo < int(_width); rxo++ {
 										z := getAtPoint(float64(rxo), float64(_y), _ux, _uy, _uz, _width, _height, _iteration, false, false)
 										fz := float64(z) / float64(_iteration)
 										z = int(fz * 255) //int(fz*0xFFFFFF)
-										print_image.SetNRGBA(rxo, _y, color.NRGBA{uint8(z), uint8(z), uint8(z), 255})
+										printImage.SetNRGBA(rxo, _y, color.NRGBA{R: uint8(z), G: uint8(z), B: uint8(z), A: 255})
 									}
-								}(ryo, 1, 800, _cx, _cy, _cz)
+								}(ryo, 1, pngIterations, _cx, _cy, _cz)
 							}
-							png_wg.Wait()
-							f, err := os.Create("binted.png")
+							pngWg.Wait()
+							f, err := os.Create(pngName)
 							if err != nil {
 								log.Fatal(err)
 							}
-							if png.Encode(f, print_image) != nil {
-								f.Close()
+							err = png.Encode(f, printImage)
+							err2 := f.Close()
+							if err != nil {
 								log.Fatal(err)
 							}
-							if f.Close() != nil {
-								log.Fatal(err)
+							if err2 != nil {
+								log.Fatal(err2)
 							}
-						}(ux, uy, uz, 1280*4, 720*4)
+						}(ux, uy, uz, pngWidth, pngHeight)
 					}
 				}
 			}
@@ -166,30 +172,30 @@ func main() {
 
 	uz = 1.0
 	for {
-		if pass < max_sq_passes || hq_render {
-			current_iteration := updating_iterations[int(math.Min(float64(max_sq_passes), float64(pass)))]
-			if hq_render {
-				current_iteration = updating_iterations[max_sq_passes]
+		if pass < maxSqPasses || hqRender {
+			currentIteration := updatingIterations[int(math.Min(float64(maxSqPasses), float64(pass)))]
+			if hqRender {
+				currentIteration = updatingIterations[maxSqPasses]
 			}
 
-			for y := 0; y < int(height); y += pass_fx[pass] {
-				render_wg.Add(1)
-				go func(_y int, _pass int, _current_iteration int, _ux float64, _uy float64, _uz float64, _hq bool, _up bool) {
+			for y := 0; y < int(height); y += passFx[pass] {
+				renderWg.Add(1)
+				go func(_y int, _pass int, _currentIteration int, _ux float64, _uy float64, _uz float64, _hq bool, _up bool) {
 					//fmt.Printf("%d: on duty!", _y)
-					defer render_wg.Done()
-					for _x := 0; _x < int(width); _x += pass_fx[_pass] {
+					defer renderWg.Done()
+					for _x := 0; _x < int(width); _x += passFx[_pass] {
 
-						iteration := getAtPoint(float64(_x), float64(_y), _ux, _uy, _uz, width, height, _current_iteration, _up, true)
+						iteration := getAtPoint(float64(_x), float64(_y), _ux, _uy, _uz, width, height, _currentIteration, _up, true)
 
-						hq_iter := 0
+						hqIter := 0
 						if _hq {
-							hqy := float64(_y) + float64(pass_fx[_pass])/2.0
+							hqy := float64(_y) + float64(passFx[_pass])/2.0
 
-							hq_iter = getAtPoint(float64(_x), hqy, _ux, _uy, _uz, width, height, _current_iteration, _up, true)
+							hqIter = getAtPoint(float64(_x), hqy, _ux, _uy, _uz, width, height, _currentIteration, _up, true)
 
 							// Characters that slap
 							// ▄ ░ ▒ ▓
-							s.SetContent(_x, _y, '▄', nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration%256)).Foreground(tcell.PaletteColor(hq_iter%256)))
+							s.SetContent(_x, _y, '▄', nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration%256)).Foreground(tcell.PaletteColor(hqIter%256)))
 						} else {
 							// if !single_rune {
 							// 	ending_rune = rune(iteration+'0') % 127
@@ -200,23 +206,23 @@ func main() {
 							// 	ending_rune = ' '
 							// }
 
-							var ending_rune rune = ' '
+							endingRune := ' '
 							// ┃╋━
 
 							if crosshair {
 								if _x == int(width/2) {
-									ending_rune = '┃'
+									endingRune = '┃'
 								}
 
 								if _y == int(height/2) {
-									if ending_rune == '┃' {
-										ending_rune = '╋'
+									if endingRune == '┃' {
+										endingRune = '╋'
 									} else {
-										ending_rune = '━'
+										endingRune = '━'
 									}
 								}
 							}
-							s.SetContent(_x, _y, ending_rune, nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration%256)).Foreground(tcell.ColorWhite))
+							s.SetContent(_x, _y, endingRune, nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration%256)).Foreground(tcell.ColorWhite))
 						}
 
 						// if x+_y == 0 {
@@ -225,27 +231,27 @@ func main() {
 						// s.SetContent(_x, _y, ending_rune, nil, tcell.StyleDefault.Background(tcell.PaletteColor(iteration)).Foreground(tcell.ColorWhite))
 						// }
 					}
-				}(y, pass, current_iteration, ux, uy, uz, hq_render, usePower)
+				}(y, pass, currentIteration, ux, uy, uz, hqRender, usePower)
 			}
 			pass++
-			render_wg.Wait()
-			hq_render = false
+			renderWg.Wait()
+			hqRender = false
 			s.Show()
 		}
 	}
 }
 
-func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, _width float64, _height float64, max_iterations int, use_power bool, max_overwrite bool) int {
+func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, _width float64, _height float64, maxIterations int, usePower bool, maxOverwrite bool) int {
 	y0 := -1.2/uz + (2.47*(y/_height))/uz + uy
 	x0 := -2.0/uz + (4.00*(x/_width))/uz + ux
 
-	var point complex128 = complex(x0, y0)
+	var point = complex(x0, y0)
 	iteration := 0
 
 	z := 0 + 0i
 
 	checkWith := cmplx.Abs(boundCheck)
-	for cmplx.Abs(z) <= checkWith && iteration < max_iterations {
+	for cmplx.Abs(z) <= checkWith && iteration < maxIterations {
 		if !usePower {
 			z = z*z + point
 		} else {
@@ -254,7 +260,7 @@ func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, _width
 		iteration++
 	}
 
-	if iteration >= max_iterations && max_overwrite {
+	if iteration >= maxIterations && maxOverwrite {
 		iteration = 0
 	}
 
