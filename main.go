@@ -17,8 +17,8 @@ import (
 const width float64 = 180.0
 const height float64 = 60.0
 
-const pngWidth float64 = 1920 * 2
-const pngHeight float64 = 1080 * 2
+const pngWidth float64 = 1920 * 4
+const pngHeight float64 = 1080 * 4
 const pngName string = "binted.png"
 const pngIterations int = 800
 
@@ -28,7 +28,7 @@ var passFx = []int{3, 2, 2, 1, 1}
 
 const maxSqPasses = 4
 
-var crosshair = true
+var crossHair = true
 var hqRender = false
 
 // const single_rune = true
@@ -105,7 +105,7 @@ func main() {
 					case 'X', 'x':
 						uz /= 1.05
 					case 'C', 'c':
-						crosshair = !crosshair
+						crossHair = !crossHair
 					case 'Q', 'q':
 						go func() {
 							ux = 0
@@ -209,7 +209,7 @@ func main() {
 							endingRune := ' '
 							// ┃╋━
 
-							if crosshair {
+							if crossHair {
 								if _x == int(width/2) {
 									endingRune = '┃'
 								}
@@ -241,12 +241,11 @@ func main() {
 	}
 }
 
-func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, _width float64, _height float64, maxIterations int, usePower bool, maxOverwrite bool) int {
+func getAtPoint(x float64, y float64, ux float64, uy float64, uz float64, _width float64, _height float64, maxIterations int, usePower bool, maxOverwrite bool) (iteration int) {
 	y0 := -1.2/uz + (2.47*(y/_height))/uz + uy
 	x0 := -2.0/uz + (4.00*(x/_width))/uz + ux
 
 	var point = complex(x0, y0)
-	iteration := 0
 
 	z := 0 + 0i
 
